@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router";
 import useAuthUser from "../hooks/useAuthUser";
 import { useQuery } from "@tanstack/react-query";
 import { getStreamToken } from "../lib/api";
+import { getStreamVideoClient } from "../lib/StreamClient"; // at top
 
 import {
   StreamVideo,
@@ -36,39 +37,40 @@ const CallPage = () => {
   });
 
   useEffect(() => {
-    const initCall = async () => {
-      if (!tokenData.token || !authUser || !callId) return;
+   const initCall = async () => {
+  if (!tokenData?.token || !authUser || !callId) return;
 
-      try {
-        console.log("Initializing Stream video client...");
+  try {
+    console.log("Initializing Stream video client...");
 
-        const user = {
-          id: authUser._id,
-          name: authUser.fullName,
-          image: authUser.profilePic,
-        };
-
-        const videoClient = new StreamVideoClient({
-          apiKey: STREAM_API_KEY,
-          user,
-          token: tokenData.token,
-        });
-
-        const callInstance = videoClient.call("default", callId);
-
-        await callInstance.join({ create: true });
-
-        console.log("Joined call successfully");
-
-        setClient(videoClient);
-        setCall(callInstance);
-      } catch (error) {
-        console.error("Error joining call:", error);
-        toast.error("Could not join the call. Please try again.");
-      } finally {
-        setIsConnecting(false);
-      }
+    const user = {
+      id: authUser._id,
+      name: authUser.fullName,
+      image: authUser.profilePic,
     };
+
+    const videoClient = getStreamVideoClient({
+      apiKey: STREAM_API_KEY,
+      user,
+      token: tokenData.token,
+    });
+
+    const callInstance = videoClient.call("default", callId);
+
+    await callInstance.join({ create: true });
+
+    console.log("Joined call successfully");
+
+    setClient(videoClient);
+    setCall(callInstance);
+  } catch (error) {
+    console.error("Error joining call:", error);
+    toast.error("Could not join the call. Please try again.");
+  } finally {
+    setIsConnecting(false);
+  }
+};
+
 
     initCall();
   }, [tokenData, authUser, callId]);
@@ -76,7 +78,7 @@ const CallPage = () => {
   if (isLoading || isConnecting) return <PageLoader />;
 
   return (
-    <div className="h-screen flex flex-col items-center justify-center">
+    <div className="flex flex-col items-center justify-center h-screen">
       <div className="relative">
         {client && call ? (
           <StreamVideo client={client}>
